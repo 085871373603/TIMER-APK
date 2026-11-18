@@ -19,8 +19,8 @@ jobs:
         run: |
           set -e
 
-          if [ -d "extracted/TIMER_MAXDIS_JAVA_FIXED" ]; then
-            SRC="extracted/TIMER_MAXDIS_JAVA_FIXED"
+          if [ -d "TIMER_MAXDIS_JAVA_FIXED" ]; then
+            SRC="TIMER_MAXDIS_JAVA_FIXED"
           else
             SRC="extracted"
           fi
