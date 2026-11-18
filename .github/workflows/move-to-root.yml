@@ -1,5 +1,5 @@
 
-name: Move Android Project to Root
+name: Move Android Project From Any Folder
 
 on:
   workflow_dispatch:
@@ -15,39 +15,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract all files to root
+      - name: Find Android project and move to root
         shell: bash
         run: |
           set -e
 
-          if [ -d "TIMER_MAXDIS_JAVA_FIXED" ]; then
-            SRC="TIMER_MAXDIS_JAVA_FIXED"
-          elif [ -d "extracted" ]; then
-            SRC="extracted"
-          else
-            echo "ERROR: Folder sumber tidak ditemukan!"
+          echo "Mencari project Android..."
+
+          if [ -f "settings.gradle" ] || [ -f "settings.gradle.kts" ]; then
+            echo "Project sudah berada di root."
+            exit 0
+          fi
+
+          mapfile -t PROJECT_FILES < <(
+            find . -type f \
+              \( -name "settings.gradle" -o -name "settings.gradle.kts" \) \
+              -not -path "./.git/*"
+          )
+
+          if [ "${#PROJECT_FILES[@]}" -eq 0 ]; then
+            echo "ERROR: Project Android tidak ditemukan."
             exit 1
           fi
 
-          echo "Mengambil seluruh isi dari: $SRC"
-
-          if [ -z "$(find "$SRC" -mindepth 1 -print -quit)" ]; then
-            echo "ERROR: Folder sumber kosong!"
+          if [ "${#PROJECT_FILES[@]}" -gt 1 ]; then
+            echo "ERROR: Ditemukan beberapa project Android:"
+            printf '%s\n' "${PROJECT_FILES[@]}"
             exit 1
           fi
 
-          # Salin seluruh file dan subfolder, termasuk file tersembunyi
-          cp -a "$SRC"/. .
+          PROJECT_DIR=$(dirname "${PROJECT_FILES[0]}")
 
-          # Hapus folder sumber setelah berhasil disalin
-          rm -rf -- "$SRC"
+          echo "Project ditemukan di: $PROJECT_DIR"
 
-          echo "Isi folder berhasil dipindahkan."
+          # Salin semua isi, termasuk file tersembunyi
+          cp -a "$PROJECT_DIR"/. .
 
-          echo "Struktur root repository:"
+          # Hapus folder pembungkus project
+          rm -rf -- "$PROJECT_DIR"
+
+          # Pastikan konfigurasi Gradle tersedia
+          test -f settings.gradle -o -f settings.gradle.kts
+
+          echo "Project berhasil dipindahkan."
+          echo "Struktur root:"
           ls -la
 
-      - name: Commit and push changes
+      - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,9 +69,9 @@ jobs:
           git add -A
 
           if git diff --cached --quiet; then
-            echo "Tidak ada perubahan untuk disimpan."
+            echo "Tidak ada perubahan."
             exit 0
           fi
 
-          git commit -m "Move all Android project files to root"
+          git commit -m "Move Android project to repository root"
           git push
