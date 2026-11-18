@@ -1,0 +1,50 @@
+
+name: Move Android Project to Root
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Move extracted files to root
+        run: |
+          set -e
+
+          if [ -d "extracted/TIMER_MAXDIS_JAVA_FIXED" ]; then
+            SRC="extracted/TIMER_MAXDIS_JAVA_FIXED"
+          else
+            SRC="extracted"
+          fi
+
+          if [ ! -d "$SRC" ]; then
+            echo "Folder extracted tidak ditemukan!"
+            exit 1
+          fi
+
+          cp -a "$SRC"/. .
+
+          rm -rf extracted
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Tidak ada perubahan."
+            exit 0
+          fi
+
+          git commit -m "Move Android project to repository root"
+          git push
