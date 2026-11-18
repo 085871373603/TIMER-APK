@@ -15,26 +15,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Move extracted files to root
+      - name: Extract all files to root
+        shell: bash
         run: |
           set -e
 
           if [ -d "TIMER_MAXDIS_JAVA_FIXED" ]; then
             SRC="TIMER_MAXDIS_JAVA_FIXED"
-          else
+          elif [ -d "extracted" ]; then
             SRC="extracted"
-          fi
-
-          if [ ! -d "$SRC" ]; then
-            echo "Folder extracted tidak ditemukan!"
+          else
+            echo "ERROR: Folder sumber tidak ditemukan!"
             exit 1
           fi
 
+          echo "Mengambil seluruh isi dari: $SRC"
+
+          if [ -z "$(find "$SRC" -mindepth 1 -print -quit)" ]; then
+            echo "ERROR: Folder sumber kosong!"
+            exit 1
+          fi
+
+          # Salin seluruh file dan subfolder, termasuk file tersembunyi
           cp -a "$SRC"/. .
 
-          rm -rf extracted
+          # Hapus folder sumber setelah berhasil disalin
+          rm -rf -- "$SRC"
 
-      - name: Commit changes
+          echo "Isi folder berhasil dipindahkan."
+
+          echo "Struktur root repository:"
+          ls -la
+
+      - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -42,9 +55,9 @@ jobs:
           git add -A
 
           if git diff --cached --quiet; then
-            echo "Tidak ada perubahan."
+            echo "Tidak ada perubahan untuk disimpan."
             exit 0
           fi
 
-          git commit -m "Move Android project to repository root"
+          git commit -m "Move all Android project files to root"
           git push
