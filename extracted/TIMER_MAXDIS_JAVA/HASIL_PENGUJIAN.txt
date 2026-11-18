@@ -1,0 +1,39 @@
+TIMER MAXDIS JAVA — HASIL PEMERIKSAAN DAN PENGUJIAN
+Tanggal: 18 November 2026
+
+A. YANG SUDAH DIJALANKAN DAN LULUS (diverifikasi nyata di sesi ini)
+1. Unit test JVM: 33 test, 33 lulus.
+   - TimerLogicTest  : 20 test (rumus durasi untuk SELURUH Qty 1..100.000, validasi input, target,
+                       format, batas shift, rekap & deviasi +-10%).
+   - TimerStateTest  : 13 test (start, tolak start ganda, selesai, alarm terlambat, lanjut idempoten,
+                       sesi 6 lorong penuh, reset, jam sistem mundur).
+   TimerLogic dan TimerState dikompilasi dengan javac (JDK 21, -source 17) tanpa error. Test dijalankan
+   dengan stub JUnit/Context/SharedPreferences lokal karena Gradle dan Android SDK tidak tersedia.
+2. Uji mutasi: tiga bug lama dikembalikan satu per satu ke salinan sementara; 8 test gagal sebagaimana
+   mestinya. Artinya test benar-benar mendeteksi bug tersebut, bukan sekadar lulus.
+3. Parsing sintaks seluruh 9 file Java (termasuk MainActivity, TimerService, receiver): 0 error.
+4. AndroidManifest.xml, styles (values dan values-v27), ic_stat_timer.xml: XML valid.
+5. Referensi resource R.raw.notifikasi, R.raw.display, R.drawable.ic_stat_timer, R.mipmap.ic_launcher
+   semuanya ada. notifikasi.mp3 (MP3 valid, 0,84 detik), display.mp4 (H.264 320x180, 2 detik),
+   ic_launcher.png (192x192) valid.
+6. Workflow GitHub Actions: YAML valid. Pemeriksaan silang pemanggilan antar-kelas: tidak ada metode hilang.
+
+B. BELUM DAPAT DIVERIFIKASI DI LINGKUNGAN INI (lakukan sebelum dipakai produksi)
+- Kompilasi penuh terhadap android.jar dan build APK (tidak ada Android SDK / Gradle Android). Kelas
+  yang memakai API Android (MainActivity, TimerService, receiver) baru diperiksa sintaksnya, belum
+  dikompilasi penuh. Build di GitHub Actions / Android Studio adalah pembuktian pertamanya.
+- Instalasi dan uji nyata di perangkat Samsung/Android (tampilan, bunyi alarm, getar, notifikasi).
+- Ketepatan alarm pada mode Doze / penghemat baterai, dan pemulihan setelah reboot fisik.
+- Perilaku pembatasan latar belakang One UI pada tiap versi.
+
+C. DAFTAR UJI MANUAL DI PERANGKAT (disarankan)
+1. Qty 1 -> timer 5 detik, alarm berbunyi, tekan LANJUT, alarm berhenti, lorong berikutnya aktif.
+2. Qty 25 -> harus 02:05 (bukan 02:06).
+3. Mulai timer, matikan layar 1 menit, pastikan alarm berbunyi tepat waktu.
+4. Mulai timer, geser aplikasi dari Recent Apps, pastikan notifikasi tetap ada dan alarm tetap berbunyi.
+5. Saat alarm berbunyi, tekan LANJUT dari notifikasi (aplikasi tertutup): alarm berhenti.
+6. Selesaikan 6 lorong: dialog rekap tampil sekali, OK mereset sesi.
+7. Ketik Qty 0, kosong, 100001, 99999999999999999999: muncul pesan galat, timer tidak mulai.
+8. Tekan ENTER cepat berulang: hanya satu timer dimulai (dan satu dialog izin alarm).
+9. Android 13+: tolak izin notifikasi, timer tetap berjalan. Android 12+: tolak izin Alarms & reminders.
+10. Restart HP saat timer berjalan: setelah boot, timer dipulihkan atau ditandai selesai.
